@@ -36,5 +36,62 @@ function check_and_create_booking_table() {
 
 add_action('after_setup_theme', 'check_and_create_booking_table');
 
+add_action('wp_ajax_get_movies_by_date', 'get_movies_by_date');
+add_action('wp_ajax_nopriv_get_movies_by_date', 'get_movies_by_date');
+
+function get_movies_by_date() {
+    if (isset($_POST['selected_date'])) {
+        $selected_date = sanitize_text_field($_POST['selected_date']);
+
+        global $wpdb;
+        $query = "
+            SELECT p.ID, p.post_title
+            FROM {$wpdb->posts} p
+            LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+            WHERE pm.meta_key = 'release_date' 
+            AND pm.meta_value = %s
+            AND p.post_status = 'publish'
+        ";
+        
+        $movies = $wpdb->get_results($wpdb->prepare($query, $selected_date));
+        $result = [];
+        if ($movies) {
+            foreach ($movies as $movie) {
+                $result[] = [
+                    'id' => $movie->ID,
+                    'title' => $movie->post_title
+                ];
+            }
+        }
+        echo json_encode($result);
+    }
+
+    wp_die(); 
+}
+
+add_action('wp_ajax_get_movies_by_date', 'get_ticket_by_name');
+add_action('wp_ajax_nopriv_get_movies_by_date', 'get_ticket_by_name');
+
+function get_ticket_by_name() {
+
+    if (isset($_POST['selected_name'])) {
+        $selected_name = sanitize_text_field($_POST['selected_name']);
+        global $wpdb;
+        $query = "
+            SELECT pm.meta_value
+            FROM {$wpdb->posts} p
+            LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+            WHERE p.post_title = %s
+            AND pm.meta_key = 'no_of_tickets'
+        ";
+        $result = $wpdb->get_results($wpdb->prepare($query, $selected_name));
+        // echo json_encode($result);
+
+        // echo "$result";
+        wp_send_json(['no_of_tickets' => $result]);
+    }
+    wp_die(); 
+}
+
 ?>
 
