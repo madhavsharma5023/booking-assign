@@ -69,8 +69,8 @@ function get_movies_by_date() {
     wp_die(); 
 }
 
-add_action('wp_ajax_get_movies_by_date', 'get_ticket_by_name');
-add_action('wp_ajax_nopriv_get_movies_by_date', 'get_ticket_by_name');
+add_action('wp_ajax_get_ticket_by_name', 'get_ticket_by_name');
+add_action('wp_ajax_nopriv_get_ticket_by_name', 'get_ticket_by_name');
 
 function get_ticket_by_name() {
 

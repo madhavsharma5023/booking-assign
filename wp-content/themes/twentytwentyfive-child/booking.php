@@ -2,6 +2,9 @@
 /*
 Template Name: Booking Page
 */
+if (!session_id()) {
+    session_start();
+}
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_booking'])) {
     $booking_date = sanitize_text_field($_POST['booking_date']);
     $movie_name = sanitize_text_field($_POST['movie_name']);
@@ -9,17 +12,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_booking'])) {
     $movie_email = sanitize_email($_POST['movie_email']);
     global $wpdb;
     $table_name = $wpdb->prefix . 'booking';
-    $wpdb->insert(
-        $table_name,
-        [
-            'date' => $booking_date,
-            'movie_name' => $movie_name,
-            'no_of_tickets' => $movie_ticket,
-            'email_id' => $movie_email,
-        ]
-    );
+    $email_exists = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$table_name} WHERE email_id = %s and movie_name = %s" ,
+        $movie_email,$movie_name
+    ));
+    if($email_exists>0){
+       echo"Already booked";
+    }
+    else{
+        $wpdb->insert(
+            $table_name,
+            [
+                'date' => $booking_date,
+                'movie_name' => $movie_name,
+                'no_of_tickets' => $movie_ticket,
+                'email_id' => $movie_email,
+            ]
+        );
+        $_SESSION['movie_name'] = $movie_name;
 
-    echo"data inserted";
+        wp_redirect( 'http://localhost/wordpress/index.php/booking-detail');
+        exit();
+    }
+    // wp_redirect(site_url('/booking-detail/?movie_name='.$movie_name));
+   
+    // echo"data inserted";
 }
 ?>
 <h1>Booking Form</h1>
@@ -38,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_booking'])) {
     </p>
     <p>
         <label for="movie_ticket">Select ticket:</label>
-        <input type="number" id="movie_ticket" name="movie_ticket" min="" max="">
+        <input type="number" id="movie_ticket" name="movie_ticket" min="0" max="">
     </p>
     <p>
         <label for="movie_email">Email:</label>
@@ -95,7 +112,8 @@ document.getElementById('movie_name').addEventListener('change', function() {
     .then(response => response.json())
     .then(result => {
         console.log(result);
-        
+        console.log(result.no_of_tickets[0].meta_value);
+        document.getElementById("movie_ticket").setAttribute("max", result.no_of_tickets[0].meta_value);
     })
 });
 
